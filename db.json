@@ -3,7 +3,6 @@
     "name": "Madhu Ch"
   },
   "users":[
-    [
    {
       "id":1,
       "name":"Test Name 1",
@@ -94,7 +93,5 @@
       "name":"Test Name 18",
       "email":"test_18@gamil.com"
    }
-]
-
   ]
 }
