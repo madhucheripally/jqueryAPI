@@ -7,6 +7,47 @@
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+  <style type="text/css">
+    .numericButton
+{
+    background-color: #FFFFFF;
+    color: #666666;
+    border: 1px solid #C9C9C9;
+    display: inline-block;
+    line-height: 14px;
+    min-width: 14px !important;
+    padding: 4px;
+    text-align: center;
+    text-decoration: none;
+}
+.currentPageButton
+{
+    background-color: #686868;
+    color: #fff !important;
+    border: 1px solid #C9C9C9;
+    display: inline-block;
+    line-height: 14px;
+    min-width: 14px !important;
+    padding: 4px;
+    text-align: center;
+    text-decoration: none;
+}
+.nextbutton {
+    background-color: #FFFFFF;
+    border: 1px solid #C9C9C9;
+    color: #666666 !important;
+    display: inline-block;
+    line-height: 14px;
+    padding: 4px;
+    text-align: center;
+    text-decoration: none;
+    width: 55px;
+}
+#page_navigation{
+    padding-top:8px;
+}
+}
+  </style>
 </head>
 <body>
 <!-- Button trigger modal -->
@@ -25,20 +66,21 @@
                        <span class="sr-only">Close</span>
                 </button>
                 <h4 class="modal-title" id="myModalLabel">
-                    Add User 
+                    Edit User 
                 </h4>
             </div>
             
             <!-- Modal Body -->
             <div class="modal-body">
                 
-                <form class="form-horizontal" role="form">
+                <form class="form-horizontal" role="form" method="post" id="edit_userData" name="edit_userData">
                   <div class="form-group">
                     <label class="col-sm-2 control-label"
                           for="inputPassword3" >Name</label>
                     <div class="col-sm-10">
-                        <input type="password" class="form-control"
-                            id="inputPassword3" placeholder="Password"/>
+                        <input type="text" class="form-control" 
+                            id="edit_user_name" name="edit_user_name" placeholder="User Name" required />
+                            <input type="hidden" name="edit_user_id" id="edit_user_id">
                     </div>
                   </div>
                   <div class="form-group">
@@ -46,24 +88,16 @@
                               for="inputEmail3">Email</label>
                     <div class="col-sm-10">
                         <input type="email" class="form-control" 
-                        id="inputEmail3" placeholder="Email"/>
+                        id="edit_user_email" name="edit_user_email" placeholder="Email" required/>
                     </div>
                   </div>
-                  
-                  <div class="form-group">
-                    <div class="col-sm-offset-2 col-sm-10">
-                      <div class="checkbox">
-                        <label>
-                            <input type="checkbox"/> Remember me
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="form-group">
-                    <div class="col-sm-offset-2 col-sm-10">
-                      <button type="submit" class="btn btn-default">Sign in</button>
-                    </div>
-                  </div>
+                  <div class="modal-footer">
+                <button type="button" class="btn btn-default"
+                        data-dismiss="modal">
+                            Close
+                </button>
+                <button type="submit" class="btn btn-primary">Update</button>
+            </div>
                 </form>
                 
                 
@@ -74,15 +108,7 @@
             </div>
             
             <!-- Modal Footer -->
-            <div class="modal-footer">
-                <button type="button" class="btn btn-default"
-                        data-dismiss="modal">
-                            Close
-                </button>
-                <button type="button" class="btn btn-primary">
-                    Save changes
-                </button>
-            </div>
+            
         </div>
     </div>
 </div>
@@ -152,6 +178,12 @@
     Add +
 </button></td>
       </tr>
+      <tr> 
+    <th>&nbsp;</th> 
+    <th>User Id</th> 
+    <th>Name</th> 
+    <th>Email</th> 
+    </tr>
     </thead>
     <tbody id="users">
        <tr>
@@ -162,6 +194,9 @@
          <td colspan="4"><button class="btn btn-primary btn-lg" id="delete" disabled>Delete</button></td>
       </tr>
   </table>
+  <input type='hidden' id='current_page' />
+    <input type='hidden' id='show_per_page' />
+  <div id="page_navigation"></div>
 </div>        
   
 
@@ -174,30 +209,29 @@
 </html>
 <script type="text/javascript">
 // api url 
-const api_url = "https://jsonplaceholder.typicode.com/users";
-async function getUserList(url) 
-{ 
-  var response = await fetch(url); 
+//const host_api_url = "https://jsonplaceholder.typicode.com/users"; 
+const host_api_url = "http://localhost:3000/users";// Local
+
+async function getUserList() 
+{
+  //var api_url = "https://my-json-server.typicode.com/madhucheripally/jqueryAPI/users?_limit=5"; 
+  var api_url = host_api_url+"?_sort=id&_order=desc";
+  var response = await fetch(api_url); 
   var data = await response.json(); 
   if (response) 
   { 
     hideloader(); 
   } 
   show(data); 
+  showPage(1);
 } 
-getUserList(api_url); 
+getUserList(); 
 function hideloader() { 
   $('#loading').hide(); 
 } 
 // Function to define innerHTML for HTML table 
 function show(data) { 
-  let tabData = 
-    `<tr> 
-    <th>&nbsp;</th> 
-    <th>User Id</th> 
-    <th>Name</th> 
-    <th>Email</th> 
-    </tr>`; 
+  let tabData = ''; 
   
   // Loop to access all rows 
   for (let user of data) { 
@@ -210,28 +244,132 @@ function show(data) {
   } 
   
   $("#users").html(tabData); 
+  
 }
+makePager = function(page){
+var show_per_page = 5;
+                    var number_of_items = $('#users tr').length;
+                    var number_of_pages = Math.ceil(number_of_items / show_per_page);
+                    var number_of_pages_todisplay = 5;
+            var navigation_html = '';
+            var current_page = page;
+            var current_link = (number_of_pages_todisplay >= current_page ? 1 : number_of_pages_todisplay + 1);
+            if (current_page > 1)
+                current_link = current_page;
+            if (current_link != 1) navigation_html += "<a class='nextbutton' href=\"javascript:first();\">« Start&nbsp;</a>&nbsp;<a class='nextbutton' href=\"javascript:previous();\">« Prev&nbsp;</a>&nbsp;";
+            if (current_link == number_of_pages - 1) current_link = current_link - 3;
+            else if (current_link == number_of_pages) current_link = current_link - 4;
+            else if (current_link > 2) current_link = current_link - 2;
+            else current_link = 1;
+            var pages = number_of_pages_todisplay;
+            while (pages != 0) {
+                if (number_of_pages < current_link) { break; }
+                if (current_link >= 1)
+                    navigation_html += "<a class='" + ((current_link == current_page) ? "currentPageButton" : "numericButton") + "' href=\"javascript:showPage(" + current_link + ")\" longdesc='" + current_link + "'>" + (current_link) + "</a>&nbsp;";
+                current_link++;
+                pages--;
+            }
+            if (number_of_pages > current_page){
+                navigation_html += "<a class='nextbutton' href=\"javascript:next()\">Next »</a>&nbsp;<a class='nextbutton' href=\"javascript:last(" + number_of_pages + ");\">Last »</a>";
+            }
+                    $('#page_navigation').html(navigation_html);
+      }
+      var pageSize = 5;
+      showPage = function (page) {
+            $("#users tr").hide();
+            $('#current_page').val(page);
+            $("#users tr").each(function (n) {
+                if (n >= pageSize * (page - 1) && n < pageSize * page)
+                    $(this).show();
+            });
+        makePager(page);
+       }
+        showPage(1);
+       next = function () {
+            new_page = parseInt($('#current_page').val()) + 1;
+            showPage(new_page);
+        }
+        last = function (number_of_pages) {
+            new_page = number_of_pages;
+            $('#current_page').val(new_page);
+            showPage(new_page);
+        }
+        first = function () {
+            var new_page = "1";
+            $('#current_page').val(new_page);
+            showPage(new_page);    
+      }
+        previous = function () {
+            new_page = parseInt($('#current_page').val()) - 1;
+            $('#current_page').val(new_page);
+            showPage(new_page);
+      }
 async function addUser() 
 { 
+  //var api_url = "https://my-json-server.typicode.com/madhucheripally/jqueryAPI/users";
+  var api_url = host_api_url;
+   var name = $("#add_user_name").val()
+   var email = $("#add_user_email").val() 
    var response = await fetch(api_url, {
     method: 'POST',
     body: JSON.stringify({
-      name: 'test',
-      email: 'test@gmail.com'
+      name: name,
+      email: email
     }),
     headers: {
-      'Content-type': 'application/json; charset=UTF-8',
+      "Content-type": "application/json; charset=UTF-8"
     },
-}) 
+})
+  getUserList();
+} 
+async function getUser(user_id) 
+{ 
+  //var api_url = "https://my-json-server.typicode.com/madhucheripally/jqueryAPI/users";
+  var api_url = host_api_url;
+   var response = await fetch(api_url+"/"+user_id);
   var data = await response.json(); 
-  if (response) 
-  { 
-    hideloader(); 
-  } 
-  getUserList(api_url);
+  $("#edit_user_name").val(data.name)
+  $("#edit_user_email").val(data.email)
+  $("#edit_user_id").val(data.id)
 } 
 
-    
+async function updateUser() 
+{ 
+  //var api_url = "https://my-json-server.typicode.com/madhucheripally/jqueryAPI/users";
+  var user_id = $("#edit_user_id").val()
+  var api_url = host_api_url+"/"+user_id;
+   var name = $("#edit_user_name").val()
+   var email = $("#edit_user_email").val() 
+   
+   var response = await fetch(api_url, {
+    method: 'PUT',
+    body: JSON.stringify({
+      id:user_id,
+      name: name,
+      email: email
+    }),
+    headers: {
+      "Content-type": "application/json; charset=UTF-8"
+    },
+});
+  getUserList();
+}
+function deleteUser() 
+{ 
+  //var api_url = "https://my-json-server.typicode.com/madhucheripally/jqueryAPI/users";
+
+  $('.usercheckbox:checked').each(function () 
+  {
+      var user_id = $(this).val();
+      //var api_url = "https://my-json-server.typicode.com/madhucheripally/jqueryAPI/users"+user_id;
+      var api_url = host_api_url+"/"+user_id;
+      const response = fetch(api_url, {
+        method: 'DELETE'
+    });    
+  });
+   
+  getUserList();
+}   
     
 $(function(){
   $("#users").on('click','.usercheckbox',function(){
@@ -256,8 +394,25 @@ $(function(){
   $("#addUserData").submit(function(){
 
    addUser();
+   $("#myModalNorm").modal('hide');
+   $("#addUserData")[0].reset();
    return false;
 
+})
+$("#edit_user_button").click(function(){
+  var user_id  = $(".usercheckbox:checkbox:checked").val();
+  getUser(user_id);
+});
+$("#edit_userData").submit(function(){
+
+   updateUser();
+   $("#myModalHorizontal").modal('hide');
+   $("#edit_userData")[0].reset();
+   return false;
+
+})
+$("#delete").click(function(){
+   deleteUser();
 })
 })
 
