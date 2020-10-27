@@ -9,9 +9,9 @@
     { "id": 2, "body": "some comment", "postId": 1 }
   ],
   "profile": {
-    "name": "typicode"
+    "name": "Madhu Ch"
   },
-  "user":[
+  "users":[
     {"id":1, "name":"Test","email":"test@test.com"}
   ]
 }
