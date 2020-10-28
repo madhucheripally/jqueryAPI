@@ -3,9 +3,12 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "scripts": {
-	"json:server": "json-server --watch db.json"
+  "publishConfig": {
+  "registry":"https://npm.pkg.github.com"
 },
+  "scripts": {
+    "json:server": "json-server --watch db.json"
+  },
   "author": "Madhu Ch",
   "license": "ISC",
   "dependencies": {
